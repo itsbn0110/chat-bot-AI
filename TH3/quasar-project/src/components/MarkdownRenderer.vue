@@ -1,5 +1,5 @@
 <template>
-  <!-- Vùng hiển thị HTML đã parse từ Markdown -->
+  <!-- Hiển thị nội dung Markdown đã parse -->
   <div v-html="renderedMarkdown" class="markdown-content" />
 </template>
 
@@ -18,33 +18,57 @@ const props = defineProps({
 })
 
 // Khởi tạo markdown-it
+// LƯU Ý: html: false để tắt parse HTML -> <template>, <script> hiển thị nguyên dạng
 const md = new MarkdownIt({
   highlight(str, lang) {
-    let codeHtml = ''
-    if (lang && hljs.getLanguage(lang)) {
-      try {
-        codeHtml = hljs.highlight(str, { language: lang }).value
-      } catch {
-        codeHtml = md.utils.escapeHtml(str)
-      }
-    } else {
-      codeHtml = md.utils.escapeHtml(str)
-    }
-
-    // Escape code để copy multiline
-    const escapedCode = str
-      .replace(/'/g, "\\'")
-      .replace(/\n/g, '\\n')
-
-    // Nút copy ở góc phải
+    
+   let codeHtml = ''
+if (lang && hljs.getLanguage(lang)) {
+  try {
+    codeHtml = hljs.highlight(str, { language: lang }).value
+  } catch {
+    codeHtml = md.utils.escapeHtml(str)
+  }
+} else {
+  codeHtml = md.utils.escapeHtml(str)
+}
+console.log(codeHtml);
+// Tạo escapedCode cho copy
+// Giữ nguyên \n trong codeHtml, nhưng thay thế \n trong escapedCode => "\\n"
+const escapedCode = str
+  // Escape backslash trước, nếu có
+  .replace(/\\/g, '\\\\')
+  // Escape dấu nháy đơn
+  .replace(/'/g, "\\'")
+  // Escape xuống dòng
+  .replace(/\r?\n/g, '\\n')
+    // Nút Copy (style inline)
     const copyButton = `
-      <button class="copy-btn"
-        onclick="navigator.clipboard.writeText('${escapedCode}')">
-        Copy
-      </button>
+      <button
+        class="copy-btn"
+        style="
+          all: unset;
+          box-sizing: border-box;
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          width: 60px;
+          height: 30px;
+          background: #555;
+          color: #fff !important;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          font-size: 0.85rem;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: background 0.2s;
+        "
+        onclick="navigator.clipboard.writeText('${escapedCode}')"
+      >Copy</button>
     `
 
-    // Gói code block vào .dark-code-block
+    // Bọc code block
     return `
       <div class="dark-code-block">
         ${copyButton}
@@ -52,14 +76,14 @@ const md = new MarkdownIt({
       </div>
     `
   }
-}).use(markdownItKatex) // plugin công thức toán
+}).use(markdownItKatex)
 
 // Tạo HTML từ chuỗi Markdown
 const renderedMarkdown = computed(() => md.render(props.source))
 </script>
 
 <style>
-
+/* Vùng chứa Markdown */
 .markdown-content {
   width: 100%;
   overflow-wrap: break-word;
@@ -68,42 +92,31 @@ const renderedMarkdown = computed(() => md.render(props.source))
 /* Khối code nền tối */
 .dark-code-block {
   position: relative;
-  margin: 1em 0;
+  margin: 1em auto;
   background: #2b2b2b;
   border-radius: 6px;
-  padding: 1.5em 1em 1em; /* chừa chỗ cho nút copy */
-  overflow: auto;
+  padding: 1.5em 1em 1em;
+  box-sizing: border-box;
+  max-width: 100%;
+  width: 100%;
+
+  /* Chỉ hiển thị thanh cuộn ngang khi code vượt chiều rộng */
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 /* Xoá margin mặc định của <pre> */
 .dark-code-block pre {
   margin: 0;
-  white-space: pre; /* hoặc pre-wrap nếu muốn code tự xuống dòng */
+  white-space: pre;      /* Không tự xuống dòng => cuộn ngang khi code quá dài */
+  min-width: fit-content;/* Tránh co hẹp, cho phép cuộn ngang */
 }
 
-/* Nút Copy */
-.copy-btn {
-  position: absolute;
-  background: #555;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 0.8rem;    /* giảm cỡ chữ */
-  line-height: 1.2;
-  cursor: pointer;
-  appearance: none;     /* xoá kiểu nút mặc định */
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  /* Quasar có thể thêm style button, ta ghi đè bằng !important nếu cần */
-  min-width: auto !important;
-  min-height: auto !important;
-  transition: background 0.2s;
-  right: 0px;
-}
+/* Hover cho nút Copy (dù phần lớn style inline) */
 .copy-btn:hover {
-  background: #666;
+  background-color: #666 !important;
 }
+
 /* highlight.js chỉ set màu chữ, nền do .dark-code-block */
 .hljs {
   background: none !important;

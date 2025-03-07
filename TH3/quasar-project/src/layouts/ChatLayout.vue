@@ -167,6 +167,8 @@ function filterThinking(text) {
 
 <style scoped>
 .messages-area {
+  width: 85%;
+  margin: auto;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -180,7 +182,6 @@ function filterThinking(text) {
 }
 .ai-message {
   display: inline-block;
-  background-color: #f1f1f1;
   padding: 8px;
   border-radius: 8px;
 }

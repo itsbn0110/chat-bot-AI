@@ -28,7 +28,7 @@ app.post("/api/groq", async (req, res) => {
             content: userMessage,
           },
         ],
-        temperature: 0.7,
+        temperature: 1,
         max_tokens: 2000,
       },
       {
