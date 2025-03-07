@@ -12,16 +12,21 @@
     </q-header>
 
     <!-- Drawer bên trái: Chat history -->
-    <q-drawer v-model="leftDrawerOpen" side="left" show-if-above>
-      <div class="q-pa-md">
-        <div class="text-h6 q-mb-sm">Chat History</div>
-        <div v-for="(session, index) in sessions" :key="index" class="q-mb-sm">
-          <q-item clickable @click="selectSession(index)">
-            <q-item-section>{{ session.title }}</q-item-section>
-          </q-item>
-        </div>
-      </div>
-    </q-drawer>
+  <q-drawer
+  v-model="leftDrawerOpen"
+  side="left"
+  show-if-above
+  class="fixed-drawer"
+>
+  <div class="q-pa-md">
+    <div class="text-h5 q-mb-sm">Chat History</div>
+    <div v-for="(session, index) in sessions" :key="index" class="q-mb-sm">
+      <q-item clickable @click="selectSession(index)">
+        <q-item-section class ="text-h6">{{ session.title }}</q-item-section>
+      </q-item>
+    </div>
+  </div>
+</q-drawer>
 
     <!-- Nội dung chính -->
     <q-page-container>
@@ -53,7 +58,7 @@
           <q-input
             v-model="userPrompt"
             filled
-            class="col q-mr-sm"
+            class="col q-mr-sm input-question"
             placeholder="Type your message here..."
             @keyup.enter="sendPrompt"
           />
@@ -134,18 +139,32 @@ async function sendPrompt() {
     const res = await axios.post('http://localhost:3000/api/groq', {
       userMessage: userPrompt.value
     })
-    // Giả sử Groq trả về: res.data.choices[0].message.content
-    currentSession.value.messages[aiIndex].content = res.data.choices[0].message.content
+    
+    // Xử lý phản hồi từ API
+      if (res.data && res.data.choices && res.data.choices[0] && res.data.choices[0].message) {
+        // Đảm bảo nội dung là string
+        let content = res.data.choices[0].message.content;
+        
+        // Nếu nội dung không phải string, chuyển đổi nó thành string
+        if (typeof content !== 'string') {
+          content = JSON.stringify(content);
+        }
+        
+        // Gán nội dung vào tin nhắn AI
+        currentSession.value.messages[aiIndex].content = content;
+        console.log("content",currentSession.value.messages[aiIndex].content);
+    } else {
+      throw new Error('Invalid response format from API')
+    }
   } catch (err) {
     console.error('Error calling AI:', err)
-    aiMsg.content = 'Error: ' + err.message
+    currentSession.value.messages[aiIndex].content = 'Error: ' + (err.response?.data?.error || err.message)
   } finally {
     userPrompt.value = ''
     loading.value = false
     scrollToBottom()
   }
 }
-
 // Tham chiếu đến khung tin nhắn để cuộn xuống đáy
 const messagesContainer = ref(null)
 function scrollToBottom() {
@@ -166,6 +185,17 @@ function filterThinking(text) {
 </script>
 
 <style scoped>
+
+.input-question {
+  font-size: 1.4em !important;
+}
+.fixed-drawer {
+  position: sticky !important;
+  top: 0;
+  left: 0;
+  height: 100vh; /* chiếm toàn bộ chiều cao của viewport */
+  z-index: 100;  /* đảm bảo nằm trên các thành phần khác, tùy chỉnh nếu cần */
+}
 .messages-area {
   width: 85%;
   margin: auto;
@@ -175,6 +205,7 @@ function filterThinking(text) {
   border-bottom: 1px solid #ddd;
 }
 .user-message {
+  font-size: 1.4em;
   display: inline-block;
   background-color: #e3f2fd;
   padding: 8px;
@@ -184,5 +215,6 @@ function filterThinking(text) {
   display: inline-block;
   padding: 8px;
   border-radius: 8px;
+  font-size: 1.2em;
 }
 </style>
