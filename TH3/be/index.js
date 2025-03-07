@@ -29,7 +29,7 @@ app.post("/api/groq", async (req, res) => {
           },
         ],
         temperature: 0.7,
-        max_tokens: 6000,
+        max_tokens: 2000,
       },
       {
         headers: {

@@ -22,13 +22,8 @@
     <!-- Khung hiển thị câu trả lời -->
     <div class="q-my-md">
       <h3>Trả lời từ AI:</h3>
-      <div v-if="answer">
-        <!-- Hiển thị Markdown -->
-        <MarkdownRenderer :source="answer" />
-      </div>
-      <div v-else>
-        <i>Chưa có trả lời</i>
-      </div>
+      <p v-if="answer">{{ answer }}</p>
+      <p v-else><i>Chưa có trả lời</i></p>
     </div>
   </div>
 </template>
@@ -36,31 +31,32 @@
 <script setup>
 import { ref } from 'vue'
 import axios from 'axios'
-import MarkdownRenderer from 'src/components/MarkdownRenderer.vue'
 
+// Biến lưu prompt người dùng
 const userInput = ref('')
+// Biến lưu câu trả lời từ AI
 const answer = ref('')
+// Biến loading để hiển thị trạng thái chờ
 const loading = ref(false)
 
 async function sendPrompt() {
-  loading.value = true
   try {
     const res = await axios.post('http://localhost:3000/api/groq', {
       userMessage: userInput.value
-    })
-    console.log('Kết quả Groq:', res.data)
-    // Tùy cấu trúc JSON, ví dụ: res.data.choices[0].message.content
-    answer.value = res.data.choices?.[0]?.message?.content || 'No answer'
+    });
+    console.log('Kết quả Groq:', res.data);
+    // T tuỳ theo format trả về, ví dụ:
+    // res.data.choices[0].message.content
+    answer.value = res.data.choices?.[0]?.message?.content || 'No answer';
   } catch (err) {
-    console.error('Lỗi gọi Groq:', err)
-    answer.value = 'Có lỗi khi gọi Groq'
-  } finally {
-    loading.value = false
+    console.error('Lỗi gọi proxy:', err);
+    answer.value = 'Có lỗi khi gọi Groq';
   }
 }
 </script>
 
 <style scoped>
+/* CSS tuỳ chỉnh */
 h2 {
   color: #1976d2;
 }
